@@ -45,6 +45,18 @@ pos_level = {
     '44': "1111.txt",
 }
 
+filling_boxes = []
+aftomat_pos = random.randint(0, 100)
+key_global_pos = []
+key_local_pos = []
+for i in range(15):
+    a = random.randint(0, 24 - i)
+    while [a // 5, a - (a // 5) * 5] in key_global_pos:
+        a += 1
+    key_global_pos.append([a // 5, a - (a // 5) * 5])
+    key_local_pos.append(random.randint(0, 3))
+print(key_global_pos, key_local_pos)
+
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('sprites', name)
