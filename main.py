@@ -1,6 +1,7 @@
 import pygame
 import os
 import random
+import sys
 
 FPS = 50
 WIDTH, HEIGHT = 550, 550
@@ -67,6 +68,9 @@ for i in range(15):
 golden_door_pos = random.randint(0, 24)
 
 
+
+
+
 def load_image(name, colorkey=None):
     fullname = os.path.join('sprites', name)
     fullname = os.path.join('data', fullname)
@@ -97,8 +101,30 @@ tile_images = {
     "player": load_image("player.png"),
     "box0": load_image("box.jpg"),
     "key": load_image("key.jpg"),
-    "golden_door": load_image("golden_door.jpg")
+    "golden_door": load_image("golden_door.jpg"),
+    "start": load_image("start.jpg"),
+    "end": load_image("end.jpg")
 }
+
+
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
+def start_end_screen(tile):
+    fon = pygame.transform.scale(tile_images[tile], (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 def generate_level(level):
@@ -192,6 +218,11 @@ class Player(pygame.sprite.Sprite):
     def check(self):
         pass
 
+    def exit(self):
+        if pygame.sprite.spritecollideany(self, golden_door_group):
+            return False
+        return True
+
 
 class Box(pygame.sprite.Sprite):
     def __init__(self, pos):
@@ -201,6 +232,7 @@ class Box(pygame.sprite.Sprite):
             tile_width * pos[0], tile_height * pos[1])
 
 
+start_end_screen('start')
 level_x, level_y = generate_level(load_level(pos_level[str(global_pos[0]) + str(global_pos[1])]))
 box_pos = [[1, 1], [9, 9], [1, 9], [9, 1]]
 boxes = []
@@ -238,6 +270,7 @@ while running:
                     f = True
             elif event.key == pygame.K_SPACE:
                 player.check()
+                running = player.exit()
             if f:
                 all_sprites = pygame.sprite.Group()
                 wall_group = pygame.sprite.Group()
@@ -253,3 +286,4 @@ while running:
     box_group.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
+start_end_screen('end')
