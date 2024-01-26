@@ -2,6 +2,7 @@ import pygame
 import os
 import random
 import sys
+import time
 
 FPS = 50
 WIDTH, HEIGHT = 550, 550
@@ -68,9 +69,6 @@ for i in range(15):
 golden_door_pos = random.randint(0, 24)
 
 
-
-
-
 def load_image(name, colorkey=None):
     fullname = os.path.join('sprites', name)
     fullname = os.path.join('data', fullname)
@@ -106,20 +104,14 @@ tile_images = {
     "end": load_image("end.jpg")
 }
 
-
-def terminate():
-    pygame.quit()
-    sys.exit()
-
-
 def start_end_screen(tile):
     fon = pygame.transform.scale(tile_images[tile], (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
-
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                terminate()
+                pygame.quit()
+                sys.exit()
             elif event.type == pygame.KEYDOWN or \
                     event.type == pygame.MOUSEBUTTONDOWN:
                 return
@@ -216,12 +208,12 @@ class Player(pygame.sprite.Sprite):
             self.rect.x, self.rect.y = self.rect.x - delta[0], self.rect.y - delta[1]
 
     def check(self):
-        pass
-
-    def exit(self):
-        if pygame.sprite.spritecollideany(self, golden_door_group):
-            return False
-        return True
+        for delta in [[10, 10], [10, -10], [-10, 10], [-10, -10]]:
+            self.rect.x, self.rect.y = self.rect.x + delta[0], self.rect.y + delta[1]
+            if pygame.sprite.spritecollideany(self, golden_door_group):
+                return False, True
+            self.rect.x, self.rect.y = self.rect.x - delta[0], self.rect.y - delta[1]
+        return True, False
 
 
 class Box(pygame.sprite.Sprite):
@@ -233,12 +225,13 @@ class Box(pygame.sprite.Sprite):
 
 
 start_end_screen('start')
+start_of_game = time.time()
 level_x, level_y = generate_level(load_level(pos_level[str(global_pos[0]) + str(global_pos[1])]))
 box_pos = [[1, 1], [9, 9], [1, 9], [9, 1]]
 boxes = []
 for i in range(4):
     boxes = Box(box_pos[i])
-
+end = False
 player = Player()
 running = True
 screen.fill((0, 0, 0))
@@ -269,8 +262,8 @@ while running:
                     player_pos[0], player_pos[1] = 5, 1
                     f = True
             elif event.key == pygame.K_SPACE:
-                player.check()
-                running = player.exit()
+                w = player.check()
+                running, end = w[0], w[1]
             if f:
                 all_sprites = pygame.sprite.Group()
                 wall_group = pygame.sprite.Group()
@@ -286,4 +279,7 @@ while running:
     box_group.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
-start_end_screen('end')
+end_of_game = time.time()
+if end:
+    print(round(end_of_game - start_of_game, 2))
+    start_end_screen('end')
