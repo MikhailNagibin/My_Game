@@ -13,6 +13,8 @@ door_group = pygame.sprite.Group()
 ghost_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 box_group = pygame.sprite.Group()
+key_group = pygame.sprite.Group()
+golden_door_group = pygame.sprite.Group()
 global_pos = [2, 2]
 player_pos = [5, 5]
 portal_pos = [random.randint(0, 5), random.randint(0, 5)]
@@ -45,17 +47,24 @@ pos_level = {
     '44': "1111.txt",
 }
 
+posible_global_pos_golden_door = [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 4], [1, 4], [2, 4], [3, 4], [4, 4],
+                                  [4, 4], [4, 3], [4, 2], [4, 1], [4, 0], [4, 0], [3, 0], [2, 0], [1, 0], [0, 0]]
+posible_local_pos_golden_door = [[0, 5]] * 5 + [[5, 10]] * 5 + [[10, 5]] * 5 + [[5, 0]] * 5
+pos_golden_door = random.randint(0, len(posible_global_pos_golden_door) - 1)
+print(posible_global_pos_golden_door[pos_golden_door], posible_local_pos_golden_door[pos_golden_door])
 filling_boxes = []
 aftomat_pos = random.randint(0, 100)
 key_global_pos = []
 key_local_pos = []
+posible_local_pos = [[1, 1], [9, 1], [9, 1], [9, 9]]
 for i in range(15):
     a = random.randint(0, 24 - i)
     while [a // 5, a - (a // 5) * 5] in key_global_pos:
         a += 1
     key_global_pos.append([a // 5, a - (a // 5) * 5])
-    key_local_pos.append(random.randint(0, 3))
-print(key_global_pos, key_local_pos)
+    key_local_pos.append(posible_local_pos[random.randint(0, 3)])
+
+golden_door_pos = random.randint(0, 24)
 
 
 def load_image(name, colorkey=None):
@@ -86,24 +95,51 @@ tile_images = {
     "door": load_image("door.jpg"),
     # "ghost": load_image("ghost.jpg"),
     "player": load_image("player.png"),
-    "box0": load_image("box.jpg")
+    "box0": load_image("box.jpg"),
+    "key": load_image("key.jpg"),
+    "golden_door": load_image("golden_door.jpg")
 }
 
 
 def generate_level(level):
     new_player, x, y = None, None, None
+    print(global_pos)
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '*':
                 Flor('flor', x, y)
-            elif level[y][x] == '#':
+            elif (level[y][x] == '#' and
+                  (global_pos != posible_global_pos_golden_door[pos_golden_door] or
+                   [y, x] != posible_local_pos_golden_door[pos_golden_door])):
                 Wall('wall', x, y)
             elif level[y][x] == '@':
                 Flor('flor', x, y)
             elif level[y][x] == 'D':
                 Flor('flor', x, y)
                 Door('door', x, y)
+    if global_pos == posible_global_pos_golden_door[pos_golden_door]:
+        Flor('flor', *posible_local_pos_golden_door[pos_golden_door])
+        Golden_door(posible_local_pos_golden_door[pos_golden_door])
     return x, y
+
+
+class Golden_door(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        super().__init__(golden_door_group, all_sprites)
+        self.image = tile_images['golden_door']
+        if pos[0] != 5:
+            self.image = pygame.transform.rotate(self.image, 90)
+        self.rect = self.image.get_rect().move(
+            tile_width * pos[0], tile_height * pos[1])
+
+
+class Keys(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        super().__init__(key_group, all_sprites)
+        self.image = tile_images['key']
+
+        self.rect = self.image.get_rect().move(
+            tile_width * pos[0], tile_height * pos[1])
 
 
 class Flor(pygame.sprite.Sprite):
@@ -153,6 +189,9 @@ class Player(pygame.sprite.Sprite):
                 self.rect.x <= 0 or self.rect.x >= WIDTH or self.rect.y <= 0 or self.rect.y >= HEIGHT):
             self.rect.x, self.rect.y = self.rect.x - delta[0], self.rect.y - delta[1]
 
+    def check(self):
+        pass
+
 
 class Box(pygame.sprite.Sprite):
     def __init__(self, pos):
@@ -197,6 +236,8 @@ while running:
                     global_pos[1] += 1
                     player_pos[0], player_pos[1] = 5, 1
                     f = True
+            elif event.key == pygame.K_SPACE:
+                player.check()
             if f:
                 all_sprites = pygame.sprite.Group()
                 wall_group = pygame.sprite.Group()
