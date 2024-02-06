@@ -53,7 +53,6 @@ posible_global_pos_golden_door = [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [0, 4]
                                   [4, 4], [4, 3], [4, 2], [4, 1], [4, 0], [4, 0], [3, 0], [2, 0], [1, 0], [0, 0]]
 posible_local_pos_golden_door = [[0, 5]] * 5 + [[5, 10]] * 5 + [[10, 5]] * 5 + [[5, 0]] * 5
 pos_golden_door = random.randint(0, len(posible_global_pos_golden_door) - 1)
-print(posible_global_pos_golden_door[pos_golden_door], posible_local_pos_golden_door[pos_golden_door])
 filling_boxes = []
 aftomat_pos = random.randint(0, 100)
 key_global_pos = []
@@ -65,7 +64,7 @@ for i in range(15):
         a += 1
     key_global_pos.append([a // 5, a - (a // 5) * 5])
     key_local_pos.append(posible_local_pos[random.randint(0, 3)])
-
+    print(key_global_pos[-1], key_local_pos[-1])
 golden_door_pos = random.randint(0, 24)
 
 
@@ -98,11 +97,12 @@ tile_images = {
     # "ghost": load_image("ghost.jpg"),
     "player": load_image("player.png"),
     "box0": load_image("box.jpg"),
-    "key": load_image("key.jpg"),
+    "key": load_image("new_key.png"),
     "golden_door": load_image("golden_door.jpg"),
     "start": load_image("start.jpg"),
     "end": load_image("end.jpg")
 }
+
 
 def start_end_screen(tile):
     fon = pygame.transform.scale(tile_images[tile], (WIDTH, HEIGHT))
@@ -155,9 +155,8 @@ class Keys(pygame.sprite.Sprite):
     def __init__(self, pos):
         super().__init__(key_group, all_sprites)
         self.image = tile_images['key']
-
-        self.rect = self.image.get_rect().move(
-            tile_width * pos[0], tile_height * pos[1])
+        print(pos)
+        self.rect = self.image.get_rect().move(pos)
 
 
 class Flor(pygame.sprite.Sprite):
@@ -212,6 +211,15 @@ class Player(pygame.sprite.Sprite):
             self.rect.x, self.rect.y = self.rect.x + delta[0], self.rect.y + delta[1]
             if pygame.sprite.spritecollideany(self, golden_door_group):
                 return False, True
+            if pygame.sprite.spritecollideany(self, box_group):
+                box = pygame.sprite.spritecollideany(self, box_group)
+                if global_pos in key_global_pos and \
+                    [box.rect.x // 50, box.rect.y // 50] == key_local_pos[key_global_pos.index(global_pos)]:
+                    Keys(pygame.sprite.spritecollideany(self, box_group).rect[:2])
+                    key_global_pos.remove(global_pos)
+                    key_local_pos.remove([box.rect.x // 50, box.rect.y // 50])
+                print(global_pos, key_global_pos)
+                print([box.rect.x // 50, box.rect.y // 50], key_local_pos[key_global_pos.index(global_pos)])
             self.rect.x, self.rect.y = self.rect.x - delta[0], self.rect.y - delta[1]
         return True, False
 
@@ -265,6 +273,7 @@ while running:
                 w = player.check()
                 running, end = w[0], w[1]
             if f:
+                key_group = pygame.sprite.Group()
                 all_sprites = pygame.sprite.Group()
                 wall_group = pygame.sprite.Group()
                 flor_group = pygame.sprite.Group()
@@ -277,6 +286,7 @@ while running:
     door_group.draw(screen)
     player_group.draw(screen)
     box_group.draw(screen)
+    key_group.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
 end_of_game = time.time()
