@@ -6,6 +6,7 @@ import time
 
 FPS = 50
 WIDTH, HEIGHT = 550, 550
+count = 0
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
@@ -75,6 +76,7 @@ posible_global_pos_golden_door = [
 posible_local_pos_golden_door = (
     [[0, 5]] * 5 + [[5, 10]] * 5 + [[10, 5]] * 5 + [[5, 0]] * 5
 )
+was = []
 pos_golden_door = random.randint(0, len(posible_global_pos_golden_door) - 1)
 filling_boxes = []
 aftomat_pos = random.randint(0, 100)
@@ -90,6 +92,14 @@ for i in range(15):
     print(key_global_pos[-1], key_local_pos[-1])
 golden_door_pos = random.randint(0, 24)
 screen_rect = (0, 0, 550, 550)
+
+
+class Map:
+    was = []
+
+    def draw(self):
+        for el in self.was:
+            pygame.draw.rect(screen, (0, 0, 0), (el[0] * 50, el[1] * 50, 51, 51), 1)
 
 
 def load_image(name, colorkey=None):
@@ -144,7 +154,9 @@ def start_end_screen(tile):
 
 def generate_level(level):
     new_player, x, y = None, None, None
-    print(global_pos)
+    print(was)
+    was.append(global_pos.copy())
+    my_map.was.append(global_pos.copy())
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == "*":
@@ -180,8 +192,15 @@ class Keys(pygame.sprite.Sprite):
     def __init__(self, pos):
         super().__init__(key_group, all_sprites)
         self.image = tile_images["key"]
-        print(pos)
-        self.rect = self.image.get_rect().move(pos)
+        if pos == [50, 50]:
+            self.pos = random.choice(([100, 50], [100, 100], [50, 100]))
+        elif pos == [450, 50]:
+            self.pos = random.choice(([400, 50], [400, 100], [450, 100]))
+        elif pos == [50, 450]:
+            self.pos = random.choice(([50, 400], [100, 400], [100, 450]))
+        else:
+            self.pos = random.choice(([400, 450], [400, 400], [450, 400]))
+        self.rect = self.image.get_rect().move(self.pos)
 
 
 class Flor(pygame.sprite.Sprite):
@@ -218,6 +237,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             player_pos[0] * 50 + 7, player_pos[1] * 50
         )
+        self.count = 0
 
     def update(self, delta, direction=None):
         if direction and direction != self.direction:
@@ -238,11 +258,17 @@ class Player(pygame.sprite.Sprite):
             or self.rect.y >= HEIGHT
         ):
             self.rect.x, self.rect.y = self.rect.x - delta[0], self.rect.y - delta[1]
+        if pygame.sprite.spritecollideany(self, key_group):
+            pygame.sprite.spritecollideany(self, key_group).kill()
+            self.count += 1
 
     def check(self):
         for delta in [[10, 10], [10, -10], [-10, 10], [-10, -10]]:
             self.rect.x, self.rect.y = self.rect.x + delta[0], self.rect.y + delta[1]
-            if pygame.sprite.spritecollideany(self, golden_door_group):
+            if (
+                pygame.sprite.spritecollideany(self, golden_door_group)
+                and self.count >= 10
+            ):
                 return False, True
             if pygame.sprite.spritecollideany(self, box_group):
                 box = pygame.sprite.spritecollideany(self, box_group)
@@ -252,7 +278,7 @@ class Player(pygame.sprite.Sprite):
                     == key_local_pos[key_global_pos.index(global_pos)]
                 ):
                     create_particles((box.rect.x, box.rect.y))
-                    Keys(pygame.sprite.spritecollideany(self, box_group).rect[:2])
+                    Keys(box.rect[:2])
                     key_global_pos.remove(global_pos)
                     key_local_pos.remove([box.rect.x // 50, box.rect.y // 50])
                 # print(global_pos, key_global_pos)
@@ -314,6 +340,7 @@ def create_particles(position):
         Particle(position, random.choice(numbers), random.choice(numbers))
 
 
+my_map = Map()
 start_end_screen("start")
 start_of_game = time.time()
 level_x, level_y = generate_level(
@@ -327,6 +354,7 @@ end = False
 player = Player()
 running = True
 screen.fill((0, 0, 0))
+is_map = 0
 while running:
     for event in pygame.event.get():
         f = False
@@ -334,28 +362,30 @@ while running:
             running = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                if player.update((-10, 0), "Left"):
+                if player.update((-50, 0), "Left"):
                     global_pos[0] -= 1
                     player_pos[0], player_pos[1] = 9, 5
                     f = True
             elif event.key == pygame.K_RIGHT:
-                if player.update((10, 0), "Right"):
+                if player.update((50, 0), "Right"):
                     global_pos[0] += 1
                     player_pos[0], player_pos[1] = 1, 5
                     f = True
             elif event.key == pygame.K_UP:
-                if player.update((0, -10)):
+                if player.update((0, -50)):
                     global_pos[1] -= 1
                     player_pos[0], player_pos[1] = 5, 9
                     f = True
             elif event.key == pygame.K_DOWN:
-                if player.update((0, 10)):
+                if player.update((0, 50)):
                     global_pos[1] += 1
                     player_pos[0], player_pos[1] = 5, 1
                     f = True
             elif event.key == pygame.K_SPACE:
                 w = player.check()
                 running, end = w[0], w[1]
+            elif event.key == pygame.K_ESCAPE:
+                is_map = (is_map + 1) % 2
             if f:
                 key_group = pygame.sprite.Group()
                 all_sprites = pygame.sprite.Group()
@@ -373,9 +403,14 @@ while running:
     box_group.draw(screen)
     key_group.draw(screen)
     particle_group.update()
+    if is_map:
+        screen.fill((255, 255, 255))
+        my_map.draw()
     pygame.display.flip()
     clock.tick(FPS)
+
 end_of_game = time.time()
 if end:
     print(round(end_of_game - start_of_game, 2))
     start_end_screen("end")
+
