@@ -100,6 +100,9 @@ class Map:
     def draw(self):
         for el in self.was:
             pygame.draw.rect(screen, (0, 0, 0), (el[0] * 50, el[1] * 50, 51, 51), 1)
+        pygame.draw.line(screen, (0, 0, 0), (global_pos[0] * 50 + 3, global_pos[1] * 50 + 3), (global_pos[0] * 50 + 50 - 6, global_pos[1] * 50 + 50 - 6), 1)
+        pygame.draw.line(screen, (0, 0, 0), (global_pos[0] * 50 + 3, global_pos[1] * 50 + 50 - 6), (global_pos[0] * 50 + 50 - 6, global_pos[1] * 50 + 3), 1)
+        # pygame.draw.
 
 
 def load_image(name, colorkey=None):
