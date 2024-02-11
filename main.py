@@ -9,7 +9,9 @@ WIDTH, HEIGHT = 550, 550
 count = 0
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
+
 all_sprites = pygame.sprite.Group()
+portal_group = pygame.sprite.Group()
 wall_group = pygame.sprite.Group()
 flor_group = pygame.sprite.Group()
 door_group = pygame.sprite.Group()
@@ -21,7 +23,7 @@ particle_group = pygame.sprite.Group()
 golden_door_group = pygame.sprite.Group()
 global_pos = [2, 2]
 player_pos = [5, 5]
-portal_pos = [random.randint(0, 5), random.randint(0, 5)]
+portal_pos = [random.randint(0, 4), random.randint(0, 4)]
 tile_width = tile_height = 50
 pos_level = {
     "00": "00.txt",
@@ -100,9 +102,20 @@ class Map:
     def draw(self):
         for el in self.was:
             pygame.draw.rect(screen, (0, 0, 0), (el[0] * 50, el[1] * 50, 51, 51), 1)
-        pygame.draw.line(screen, (0, 0, 0), (global_pos[0] * 50 + 3, global_pos[1] * 50 + 3), (global_pos[0] * 50 + 50 - 6, global_pos[1] * 50 + 50 - 6), 1)
-        pygame.draw.line(screen, (0, 0, 0), (global_pos[0] * 50 + 3, global_pos[1] * 50 + 50 - 6), (global_pos[0] * 50 + 50 - 6, global_pos[1] * 50 + 3), 1)
-        # pygame.draw.
+        pygame.draw.line(
+            screen,
+            (0, 0, 0),
+            (global_pos[0] * 50 + 3, global_pos[1] * 50 + 3),
+            (global_pos[0] * 50 + 50 - 6, global_pos[1] * 50 + 50 - 6),
+            1,
+        )
+        pygame.draw.line(
+            screen,
+            (0, 0, 0),
+            (global_pos[0] * 50 + 3, global_pos[1] * 50 + 50 - 6),
+            (global_pos[0] * 50 + 50 - 6, global_pos[1] * 50 + 3),
+            1,
+        )
 
 
 def load_image(name, colorkey=None):
@@ -131,14 +144,15 @@ tile_images = {
     "flor": load_image("flor.jpg"),
     "wall": load_image("wall.jpg"),
     "door": load_image("door.jpg"),
-    # "ghost": load_image("ghost.jpg"),
     "player": load_image("player.png"),
     "box0": load_image("box.jpg"),
     "key": load_image("new_key.png"),
     "golden_door": load_image("golden_door.jpg"),
     "start": load_image("start.jpg"),
     "end": load_image("end.jpg"),
+    "portal1": load_image("portal1.png"),
 }
+print(portal_pos)
 
 
 def start_end_screen(tile):
@@ -157,7 +171,6 @@ def start_end_screen(tile):
 
 def generate_level(level):
     new_player, x, y = None, None, None
-    print(was)
     was.append(global_pos.copy())
     my_map.was.append(global_pos.copy())
     for y in range(len(level)):
@@ -177,7 +190,18 @@ def generate_level(level):
     if global_pos == posible_global_pos_golden_door[pos_golden_door]:
         Flor("flor", *posible_local_pos_golden_door[pos_golden_door])
         Golden_door(posible_local_pos_golden_door[pos_golden_door])
+    if global_pos == portal_pos:
+        Portal()
+
     return x, y
+
+
+class Portal(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__(all_sprites, portal_group)
+
+        self.image = tile_images["portal1"]
+        self.rect = self.image.get_rect().move(5 * 50, 5 * 50)
 
 
 class Golden_door(pygame.sprite.Sprite):
@@ -292,6 +316,11 @@ class Player(pygame.sprite.Sprite):
             self.rect.x, self.rect.y = self.rect.x - delta[0], self.rect.y - delta[1]
         return True, False
 
+    def port(self):
+        if pygame.sprite.spritecollideany(self, portal_group):
+            return True
+        return False
+
 
 class Box(pygame.sprite.Sprite):
     def __init__(self, pos):
@@ -363,6 +392,7 @@ while running:
         f = False
         if event.type == pygame.QUIT:
             running = False
+
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
                 if player.update((-50, 0), "Left"):
@@ -389,12 +419,16 @@ while running:
                 running, end = w[0], w[1]
             elif event.key == pygame.K_ESCAPE:
                 is_map = (is_map + 1) % 2
+            if player.port():
+                global_pos = [random.randint(0, 4), random.randint(0, 4)]
+                f = True
             if f:
                 key_group = pygame.sprite.Group()
                 all_sprites = pygame.sprite.Group()
                 wall_group = pygame.sprite.Group()
                 flor_group = pygame.sprite.Group()
                 door_group = pygame.sprite.Group()
+                portal_group = pygame.sprite.Group()
                 level_x, level_y = generate_level(
                     load_level(pos_level[str(global_pos[0]) + str(global_pos[1])])
                 )
@@ -416,4 +450,3 @@ end_of_game = time.time()
 if end:
     print(round(end_of_game - start_of_game, 2))
     start_end_screen("end")
-
