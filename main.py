@@ -78,7 +78,6 @@ posible_global_pos_golden_door = [
 posible_local_pos_golden_door = (
     [[0, 5]] * 5 + [[5, 10]] * 5 + [[10, 5]] * 5 + [[5, 0]] * 5
 )
-was = []
 pos_golden_door = random.randint(0, len(posible_global_pos_golden_door) - 1)
 filling_boxes = []
 aftomat_pos = random.randint(0, 100)
@@ -171,7 +170,6 @@ def start_end_screen(tile):
 
 def generate_level(level):
     new_player, x, y = None, None, None
-    was.append(global_pos.copy())
     my_map.was.append(global_pos.copy())
     for y in range(len(level)):
         for x in range(len(level[y])):
@@ -374,7 +372,9 @@ def create_particles(position):
 
 
 def teleport():
-    player.image = pygame.transform.scale(player.image, [player.scale[0] - 1, player.scale[1] - 1])
+    player.image = pygame.transform.scale(
+        player.image, [player.scale[0] - 1, player.scale[1] - 1]
+    )
     player.image = pygame.transform.rotate(player.image, 30)
     player.scale[0] -= 1
     player.scale[1] -= 1
@@ -399,6 +399,7 @@ is_map = 0
 port = False
 f = False
 can = False
+port_was = 0
 while running:
     for event in pygame.event.get():
         f = False
@@ -431,13 +432,14 @@ while running:
             elif event.key == pygame.K_ESCAPE:
                 is_map = (is_map + 1) % 2
         if player.port():
+            player.rect.move(5 * 50 + 7, 5 * 50)
             for_time = [random.randint(0, 4), random.randint(0, 4)]
-            global_pos = for_time if for_time != global_pos else [random.randint(0, 4), random.randint(0, 4)]
+            global_pos = (
+                for_time
+                if for_time != global_pos
+                else [random.randint(0, 4), random.randint(0, 4)]
+            )
             port = True
-    if can:
-        print(can)
-        player_pos = [5, 5]
-        f = True
     if f or can:
         key_group = pygame.sprite.Group()
         all_sprites = pygame.sprite.Group()
@@ -461,9 +463,12 @@ while running:
     if is_map:
         screen.fill((255, 255, 255))
         my_map.draw()
-    if port:
+    if port and port_was % 3 == 0:
         port = teleport()
         can = not port
+        port_was += 1
+    if port and port_was % 3 != 0:
+        port_was += 1
     pygame.display.flip()
     clock.tick(FPS)
 
