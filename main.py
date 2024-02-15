@@ -374,7 +374,6 @@ def create_particles(position):
 
 
 def teleport():
-    print(player.scale)
     player.image = pygame.transform.scale(player.image, [player.scale[0] - 1, player.scale[1] - 1])
     player.image = pygame.transform.rotate(player.image, 30)
     player.scale[0] -= 1
@@ -398,12 +397,13 @@ running = True
 screen.fill((0, 0, 0))
 is_map = 0
 port = False
+f = False
+can = False
 while running:
     for event in pygame.event.get():
         f = False
         if event.type == pygame.QUIT:
             running = False
-
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
                 if player.update((-50, 0), "Left"):
@@ -430,21 +430,28 @@ while running:
                 running, end = w[0], w[1]
             elif event.key == pygame.K_ESCAPE:
                 is_map = (is_map + 1) % 2
-            if player.port():
-                global_pos = [random.randint(0, 4), random.randint(0, 4)]
-                port = True
-            if f:
-                key_group = pygame.sprite.Group()
-                all_sprites = pygame.sprite.Group()
-                wall_group = pygame.sprite.Group()
-                flor_group = pygame.sprite.Group()
-                door_group = pygame.sprite.Group()
-                portal_group = pygame.sprite.Group()
-                level_x, level_y = generate_level(
-                    load_level(pos_level[str(global_pos[0]) + str(global_pos[1])])
-                )
-                player.kill()
-                player = Player()
+        if player.port():
+            for_time = [random.randint(0, 4), random.randint(0, 4)]
+            global_pos = for_time if for_time != global_pos else [random.randint(0, 4), random.randint(0, 4)]
+            port = True
+    if can:
+        print(can)
+        player_pos = [5, 5]
+        f = True
+    if f or can:
+        key_group = pygame.sprite.Group()
+        all_sprites = pygame.sprite.Group()
+        wall_group = pygame.sprite.Group()
+        flor_group = pygame.sprite.Group()
+        door_group = pygame.sprite.Group()
+        portal_group = pygame.sprite.Group()
+        level_x, level_y = generate_level(
+            load_level(pos_level[str(global_pos[0]) + str(global_pos[1])])
+        )
+        player.kill()
+        player = Player()
+        port = False
+        can = False
     all_sprites.draw(screen)
     door_group.draw(screen)
     player_group.draw(screen)
@@ -456,7 +463,7 @@ while running:
         my_map.draw()
     if port:
         port = teleport()
-        f = True
+        can = not port
     pygame.display.flip()
     clock.tick(FPS)
 
