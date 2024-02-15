@@ -261,6 +261,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__(player_group, all_sprites)
         self.image = tile_images["player"]
         self.direction = "Right"
+        self.scale = [36, 50]
         self.rect = self.image.get_rect().move(
             player_pos[0] * 50 + 7, player_pos[1] * 50
         )
@@ -372,6 +373,15 @@ def create_particles(position):
         Particle(position, random.choice(numbers), random.choice(numbers))
 
 
+def teleport():
+    print(player.scale)
+    player.image = pygame.transform.scale(player.image, [player.scale[0] - 1, player.scale[1] - 1])
+    player.image = pygame.transform.rotate(player.image, 30)
+    player.scale[0] -= 1
+    player.scale[1] -= 1
+    return player.scale[0] != 0
+
+
 my_map = Map()
 start_end_screen("start")
 start_of_game = time.time()
@@ -387,6 +397,7 @@ player = Player()
 running = True
 screen.fill((0, 0, 0))
 is_map = 0
+port = False
 while running:
     for event in pygame.event.get():
         f = False
@@ -421,7 +432,7 @@ while running:
                 is_map = (is_map + 1) % 2
             if player.port():
                 global_pos = [random.randint(0, 4), random.randint(0, 4)]
-                f = True
+                port = True
             if f:
                 key_group = pygame.sprite.Group()
                 all_sprites = pygame.sprite.Group()
@@ -443,6 +454,9 @@ while running:
     if is_map:
         screen.fill((255, 255, 255))
         my_map.draw()
+    if port:
+        port = teleport()
+        f = True
     pygame.display.flip()
     clock.tick(FPS)
 
