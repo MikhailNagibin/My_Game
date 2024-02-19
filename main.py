@@ -9,7 +9,7 @@ WIDTH, HEIGHT = 550, 550
 count = 0
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
-
+portal = []
 all_sprites = pygame.sprite.Group()
 portal_group = pygame.sprite.Group()
 wall_group = pygame.sprite.Group()
@@ -17,10 +17,13 @@ flor_group = pygame.sprite.Group()
 door_group = pygame.sprite.Group()
 ghost_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
+gan_group = pygame.sprite.Group()
 box_group = pygame.sprite.Group()
 key_group = pygame.sprite.Group()
 particle_group = pygame.sprite.Group()
 golden_door_group = pygame.sprite.Group()
+have_gan = False
+is_gan = False
 global_pos = [2, 2]
 player_pos = [5, 5]
 portal_pos = [random.randint(0, 4), random.randint(0, 4)]
@@ -83,7 +86,7 @@ filling_boxes = []
 aftomat_pos = random.randint(0, 100)
 key_global_pos = []
 key_local_pos = []
-posible_local_pos = [[1, 1], [9, 1], [9, 1], [9, 9]]
+posible_local_pos = [[1, 1], [1, 9], [9, 1], [9, 9]]
 for i in range(15):
     a = random.randint(0, 24 - i)
     while [a // 5, a - (a // 5) * 5] in key_global_pos:
@@ -93,6 +96,22 @@ for i in range(15):
     print(key_global_pos[-1], key_local_pos[-1])
 golden_door_pos = random.randint(0, 24)
 screen_rect = (0, 0, 550, 550)
+gan_global = [random.randint(0, 4), random.randint(0, 4)]
+gan_local = [[1, 1], [1, 9], [9, 1], [9, 9]]
+if gan_global in key_global_pos:
+    gan_local.remove(key_local_pos[key_global_pos.index(gan_global)])
+gan_local = random.choice(gan_local)
+print(gan_local, 111, gan_global)
+
+
+def choose(pos):
+    if pos == [50, 50]:
+        return random.choice(([100, 50], [100, 100], [50, 100]))
+    elif pos == [450, 50]:
+        return random.choice(([400, 50], [400, 100], [450, 100]))
+    elif pos == [50, 450]:
+        return random.choice(([50, 400], [100, 400], [100, 450]))
+    return random.choice(([400, 450], [400, 400], [450, 400]))
 
 
 class Map:
@@ -150,6 +169,8 @@ tile_images = {
     "start": load_image("start.jpg"),
     "end": load_image("end.jpg"),
     "portal1": load_image("portal1.png"),
+    "gan": load_image("gan.png"),
+    "ghost": load_image("ghost.png"),
 }
 print(portal_pos)
 
@@ -189,17 +210,29 @@ def generate_level(level):
         Flor("flor", *posible_local_pos_golden_door[pos_golden_door])
         Golden_door(posible_local_pos_golden_door[pos_golden_door])
     if global_pos == portal_pos:
-        Portal()
-
+        portal.append(Portal())
     return x, y
 
 
 class Portal(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, portal_group)
-
         self.image = tile_images["portal1"]
+        self.pos = 0
+        self.f = True
         self.rect = self.image.get_rect().move(5 * 50, 5 * 50)
+
+    def move(self):
+        if self.f:
+            self.rect.y += 1
+            self.pos += 1
+            if self.pos == 15:
+                self.f = False
+        else:
+            self.rect.y -= 1
+            self.pos -= 1
+            if self.pos == -15:
+                self.f = True
 
 
 class Golden_door(pygame.sprite.Sprite):
@@ -217,15 +250,23 @@ class Keys(pygame.sprite.Sprite):
     def __init__(self, pos):
         super().__init__(key_group, all_sprites)
         self.image = tile_images["key"]
-        if pos == [50, 50]:
-            self.pos = random.choice(([100, 50], [100, 100], [50, 100]))
-        elif pos == [450, 50]:
-            self.pos = random.choice(([400, 50], [400, 100], [450, 100]))
-        elif pos == [50, 450]:
-            self.pos = random.choice(([50, 400], [100, 400], [100, 450]))
-        else:
-            self.pos = random.choice(([400, 450], [400, 400], [450, 400]))
+        self.pos = choose(pos)
         self.rect = self.image.get_rect().move(self.pos)
+
+
+class Gan(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        super().__init__(all_sprites, gan_group)
+        self.image = tile_images["gan"]
+        self.rect = self.image.get_rect()
+        self.pos = choose(pos)
+        self.rect = self.image.get_rect().move(self.pos)
+
+    def update(self):
+        if pygame.sprite.spritecollideany(self, player_group):
+            self.kill()
+            return True
+        return False
 
 
 class Flor(pygame.sprite.Sprite):
@@ -307,11 +348,13 @@ class Player(pygame.sprite.Sprite):
                     Keys(box.rect[:2])
                     key_global_pos.remove(global_pos)
                     key_local_pos.remove([box.rect.x // 50, box.rect.y // 50])
-                # print(global_pos, key_global_pos)
-                # print(
-                #     [box.rect.x // 50, box.rect.y // 50],
-                #     key_local_pos[key_global_pos.index(global_pos)],
-                # )
+                if (
+                    global_pos == gan_global
+                    and [box.rect.x // 50, box.rect.y // 50] == gan_local
+                    and not have_gan
+                ):
+                    Gan(box.rect[:2])
+                    is_gan = True
             self.rect.x, self.rect.y = self.rect.x - delta[0], self.rect.y - delta[1]
         return True, False
 
@@ -433,6 +476,7 @@ while running:
                 is_map = (is_map + 1) % 2
         if player.port():
             player.rect.move(5 * 50 + 7, 5 * 50)
+            player_pos = [5, 5]
             for_time = [random.randint(0, 4), random.randint(0, 4)]
             global_pos = (
                 for_time
@@ -447,6 +491,7 @@ while running:
         flor_group = pygame.sprite.Group()
         door_group = pygame.sprite.Group()
         portal_group = pygame.sprite.Group()
+        portal = []
         level_x, level_y = generate_level(
             load_level(pos_level[str(global_pos[0]) + str(global_pos[1])])
         )
@@ -454,12 +499,18 @@ while running:
         player = Player()
         port = False
         can = False
+
     all_sprites.draw(screen)
     door_group.draw(screen)
     player_group.draw(screen)
     box_group.draw(screen)
     key_group.draw(screen)
     particle_group.update()
+    gan_group.update()
+    portal_group.draw(screen)
+    if portal:
+        portal[0].move()
+
     if is_map:
         screen.fill((255, 255, 255))
         my_map.draw()
@@ -471,7 +522,6 @@ while running:
         port_was += 1
     pygame.display.flip()
     clock.tick(FPS)
-
 end_of_game = time.time()
 if end:
     print(round(end_of_game - start_of_game, 2))
