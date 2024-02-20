@@ -10,6 +10,7 @@ count = 0
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 portal = []
+ghost = []
 all_sprites = pygame.sprite.Group()
 portal_group = pygame.sprite.Group()
 wall_group = pygame.sprite.Group()
@@ -296,7 +297,7 @@ class Door(pygame.sprite.Sprite):
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, coins):
         super().__init__(player_group, all_sprites)
         self.image = tile_images["player"]
         self.direction = "Right"
@@ -304,7 +305,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             player_pos[0] * 50 + 7, player_pos[1] * 50
         )
-        self.count = 0
+        self.count = coins
 
     def update(self, delta, direction=None):
         if direction and direction != self.direction:
@@ -328,6 +329,7 @@ class Player(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, key_group):
             pygame.sprite.spritecollideany(self, key_group).kill()
             self.count += 1
+            print(self.count)
 
     def check(self):
         for delta in [[10, 10], [10, -10], [-10, 10], [-10, -10]]:
@@ -362,6 +364,13 @@ class Player(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, portal_group):
             return True
         return False
+
+
+class Ghost(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__(all_sprites, ghost_group)
+        self.image = tile_images["ghost"]
+        self.rect = self.image.get_rect().move(50 * 5, 50 * 5)
 
 
 class Box(pygame.sprite.Sprite):
@@ -435,7 +444,7 @@ boxes = []
 for i in range(4):
     boxes = Box(box_pos[i])
 end = False
-player = Player()
+player = Player(0)
 running = True
 screen.fill((0, 0, 0))
 is_map = 0
@@ -443,6 +452,8 @@ port = False
 f = False
 can = False
 port_was = 0
+is_ghost = pygame.USEREVENT + 1
+pygame.time.set_timer(is_ghost, 20000)
 while running:
     for event in pygame.event.get():
         f = False
@@ -474,6 +485,8 @@ while running:
                 running, end = w[0], w[1]
             elif event.key == pygame.K_ESCAPE:
                 is_map = (is_map + 1) % 2
+        if event.type == is_ghost:
+            ghost.append(Ghost())
         if player.port():
             player.rect.move(5 * 50 + 7, 5 * 50)
             player_pos = [5, 5]
@@ -491,15 +504,17 @@ while running:
         flor_group = pygame.sprite.Group()
         door_group = pygame.sprite.Group()
         portal_group = pygame.sprite.Group()
+        ghost_group = pygame.sprite.Group()
+        ghost = []
         portal = []
         level_x, level_y = generate_level(
             load_level(pos_level[str(global_pos[0]) + str(global_pos[1])])
         )
+        a = player.count
         player.kill()
-        player = Player()
+        player = Player(a)
         port = False
         can = False
-
     all_sprites.draw(screen)
     door_group.draw(screen)
     player_group.draw(screen)
@@ -510,7 +525,6 @@ while running:
     portal_group.draw(screen)
     if portal:
         portal[0].move()
-
     if is_map:
         screen.fill((255, 255, 255))
         my_map.draw()
