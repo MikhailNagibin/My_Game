@@ -371,6 +371,12 @@ class Ghost(pygame.sprite.Sprite):
         super().__init__(all_sprites, ghost_group)
         self.image = tile_images["ghost"]
         self.rect = self.image.get_rect().move(50 * 5, 50 * 5)
+        self.rot = 0
+
+    def rotate(self):
+        self.image = pygame.transform.rotate(self.image, 90)
+        self.rot += 90
+        return self.rot == 450
 
 
 class Box(pygame.sprite.Sprite):
@@ -453,7 +459,11 @@ f = False
 can = False
 port_was = 0
 is_ghost = pygame.USEREVENT + 1
-pygame.time.set_timer(is_ghost, 20000)
+pygame.time.set_timer(is_ghost, 10000)
+rotate = pygame.USEREVENT + 2
+pygame.time.set_timer(rotate, 1000)
+my_ghost = None
+norm = False
 while running:
     for event in pygame.event.get():
         f = False
@@ -486,7 +496,15 @@ while running:
             elif event.key == pygame.K_ESCAPE:
                 is_map = (is_map + 1) % 2
         if event.type == is_ghost:
-            ghost.append(Ghost())
+            ghost.append(1)
+            my_ghost = Ghost()
+        if event.type == rotate and ghost:
+            norm = my_ghost.rotate()
+        if norm:
+            my_ghost.kill()
+            my_ghost = None
+            ghost = []
+            norm = False
         if player.port():
             player.rect.move(5 * 50 + 7, 5 * 50)
             player_pos = [5, 5]
@@ -517,22 +535,22 @@ while running:
         can = False
     all_sprites.draw(screen)
     door_group.draw(screen)
-    player_group.draw(screen)
     box_group.draw(screen)
     key_group.draw(screen)
     particle_group.update()
     gan_group.update()
     portal_group.draw(screen)
+    player_group.draw(screen)
     if portal:
         portal[0].move()
     if is_map:
         screen.fill((255, 255, 255))
         my_map.draw()
-    if port and port_was % 3 == 0:
+    if port and port_was % 5 == 0:
         port = teleport()
         can = not port
         port_was += 1
-    if port and port_was % 3 != 0:
+    if port and port_was % 5 != 0:
         port_was += 1
     pygame.display.flip()
     clock.tick(FPS)
