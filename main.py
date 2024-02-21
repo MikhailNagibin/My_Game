@@ -306,7 +306,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             player_pos[0] * 50 + 7, player_pos[1] * 50
         )
-        self.count = coins
+        self.count = 10
 
     def update(self, delta, direction=None):
         if direction and direction != self.direction:
@@ -341,7 +341,7 @@ class Player(pygame.sprite.Sprite):
                 sys.exit()
 
     def check(self):
-        for delta in [[10, 10], [10, -10], [-10, 10], [-10, -10]]:
+        for delta in [[50, 50], [50, -50], [-50, 50], [-50, -50], [50, 0], [-50, 0], [0, 50], [0, -50]]:
             self.rect.x, self.rect.y = self.rect.x + delta[0], self.rect.y + delta[1]
             if (
                 pygame.sprite.spritecollideany(self, golden_door_group)
