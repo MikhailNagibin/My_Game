@@ -296,12 +296,13 @@ class Door(pygame.sprite.Sprite):
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, coins):
+    def __init__(self, coins, los):
         super().__init__(player_group, all_sprites)
         self.image = tile_images["player"]
         self.direction = "Right"
         self.scale = [36, 50]
         self.was = False
+        self.los = los
         self.rect = self.image.get_rect().move(
             player_pos[0] * 50 + 7, player_pos[1] * 50
         )
@@ -329,11 +330,15 @@ class Player(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, key_group):
             pygame.sprite.spritecollideany(self, key_group).kill()
             self.count += 1
-            print(self.count)
         if pygame.sprite.spritecollideany(self, ghost_group) and not self.was:
+            self.los += self.count // 2
             self.count //= 2
             create_particles(self.rect[:2])
             self.was = True
+            if self.los >= 6:
+                time.sleep(2)
+                start_end_screen("end")
+                sys.exit()
 
     def check(self):
         for delta in [[10, 10], [10, -10], [-10, 10], [-10, -10]]:
@@ -472,7 +477,7 @@ boxes = []
 for i in range(4):
     boxes = Box(box_pos[i])
 end = False
-player = Player(0)
+player = Player(0, 0)
 running = True
 screen.fill((0, 0, 0))
 is_map = 0
@@ -481,7 +486,7 @@ f = False
 can = False
 port_was = 0
 is_ghost = pygame.USEREVENT + 1
-pygame.time.set_timer(is_ghost, 10000)
+pygame.time.set_timer(is_ghost, 30000)
 rotate = pygame.USEREVENT + 2
 pygame.time.set_timer(rotate, 2000)
 my_ghost = None
@@ -525,6 +530,8 @@ while running:
             elif event.key == pygame.K_k:
                 for i in range(len(key_global_pos)):
                     print(key_global_pos[i], key_local_pos[i])
+            elif event.key == pygame.K_c:
+                print(player.count)
         if event.type == is_ghost:
             ghost.append(1)
             my_ghost = Ghost()
@@ -565,8 +572,9 @@ while running:
             load_level(pos_level[str(global_pos[0]) + str(global_pos[1])])
         )
         a = player.count
+        s = player.los
         player.kill()
-        player = Player(a)
+        player = Player(a, s)
         port = False
         can = False
     all_sprites.draw(screen)
