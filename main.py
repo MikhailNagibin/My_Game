@@ -335,7 +335,7 @@ class Player(pygame.sprite.Sprite):
             self.count //= 2
             create_particles(self.rect[:2])
             self.was = True
-            if self.los >= 1:
+            if self.los >= 5:
                 print('Вы потеряли слишком много ключей')
                 start_end_screen("end")
                 sys.exit()
@@ -393,9 +393,9 @@ class Vision(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, ghost_group)
         self.image = pygame.transform.rotate(tile_images['vision'], 270)
-        self.rect = self.image.get_rect().move(50 * 3 + 25, 50 * 6 - 25)
+        self.rect = self.image.get_rect().move(-50 * 3 + 25, -50 * 6 - 25)
         self.rot = -90
-        self.move = [[0, -200], [-100, 100], [100, 100], [100, -100]]
+        self.move = [[(50 * 3 + 25) * 2 - 50, -200 + (50 * 6 - 25) * 2 + 50], [-100, 100], [100, 100], [100, -100]]
 
     def rotate(self):
         self.image = pygame.transform.rotate(self.image, 90)
