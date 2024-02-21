@@ -21,6 +21,7 @@ player_group = pygame.sprite.Group()
 gan_group = pygame.sprite.Group()
 box_group = pygame.sprite.Group()
 key_group = pygame.sprite.Group()
+vis_group = pygame.sprite.Group()
 particle_group = pygame.sprite.Group()
 golden_door_group = pygame.sprite.Group()
 have_gan = False
@@ -94,7 +95,6 @@ for i in range(15):
         a += 1
     key_global_pos.append([a // 5, a - (a // 5) * 5])
     key_local_pos.append(posible_local_pos[random.randint(0, 3)])
-    print(key_global_pos[-1], key_local_pos[-1])
 golden_door_pos = random.randint(0, 24)
 screen_rect = (0, 0, 550, 550)
 gan_global = [random.randint(0, 4), random.randint(0, 4)]
@@ -102,7 +102,6 @@ gan_local = [[1, 1], [1, 9], [9, 1], [9, 9]]
 if gan_global in key_global_pos:
     gan_local.remove(key_local_pos[key_global_pos.index(gan_global)])
 gan_local = random.choice(gan_local)
-print(gan_local, 111, gan_global)
 
 
 def choose(pos):
@@ -172,8 +171,8 @@ tile_images = {
     "portal1": load_image("portal1.png"),
     "gan": load_image("gan.png"),
     "ghost": load_image("ghost.png"),
+    'vision': load_image('vision.png'),
 }
-print(portal_pos)
 
 
 def start_end_screen(tile):
@@ -302,6 +301,7 @@ class Player(pygame.sprite.Sprite):
         self.image = tile_images["player"]
         self.direction = "Right"
         self.scale = [36, 50]
+        self.was = False
         self.rect = self.image.get_rect().move(
             player_pos[0] * 50 + 7, player_pos[1] * 50
         )
@@ -330,6 +330,10 @@ class Player(pygame.sprite.Sprite):
             pygame.sprite.spritecollideany(self, key_group).kill()
             self.count += 1
             print(self.count)
+        if pygame.sprite.spritecollideany(self, ghost_group) and not self.was:
+            self.count //= 2
+            create_particles(self.rect[:2])
+            self.was = True
 
     def check(self):
         for delta in [[10, 10], [10, -10], [-10, 10], [-10, -10]]:
@@ -370,6 +374,7 @@ class Ghost(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, ghost_group)
         self.image = tile_images["ghost"]
+        # self.vis = tile_images['vision']
         self.rect = self.image.get_rect().move(50 * 5, 50 * 5)
         self.rot = 0
 
@@ -377,6 +382,23 @@ class Ghost(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.image, 90)
         self.rot += 90
         return self.rot == 450
+
+
+class Vision(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__(all_sprites, ghost_group)
+        self.image = pygame.transform.rotate(tile_images['vision'], 270)
+        self.rect = self.image.get_rect().move(50 * 3 + 25, 50 * 6 - 25)
+        self.rot = -90
+        self.move = [[0, -200], [-100, 100], [100, 100], [100, -100]]
+
+    def rotate(self):
+        self.image = pygame.transform.rotate(self.image, 90)
+        self.rot += 90
+        if self.rot < 360:
+            self.rect.x += self.move[self.rot // 90][0]
+            self.rect.y += self.move[self.rot // 90][1]
+        return self.rot == 360
 
 
 class Box(pygame.sprite.Sprite):
@@ -461,9 +483,10 @@ port_was = 0
 is_ghost = pygame.USEREVENT + 1
 pygame.time.set_timer(is_ghost, 10000)
 rotate = pygame.USEREVENT + 2
-pygame.time.set_timer(rotate, 1000)
+pygame.time.set_timer(rotate, 2000)
 my_ghost = None
 norm = False
+vis = None
 while running:
     for event in pygame.event.get():
         f = False
@@ -495,16 +518,28 @@ while running:
                 running, end = w[0], w[1]
             elif event.key == pygame.K_ESCAPE:
                 is_map = (is_map + 1) % 2
+            elif event.key == pygame.K_p:
+                print(portal_pos)
+            elif event.key == pygame.K_g:
+                print(gan_global, gan_local)
+            elif event.key == pygame.K_k:
+                for i in range(len(key_global_pos)):
+                    print(key_global_pos[i], key_local_pos[i])
         if event.type == is_ghost:
             ghost.append(1)
             my_ghost = Ghost()
+            vis = Vision()
         if event.type == rotate and ghost:
             norm = my_ghost.rotate()
+            vis.rotate()
         if norm:
             my_ghost.kill()
             my_ghost = None
             ghost = []
             norm = False
+            vis.kill()
+            vis = None
+            player.was = False
         if player.port():
             player.rect.move(5 * 50 + 7, 5 * 50)
             player_pos = [5, 5]
@@ -522,6 +557,7 @@ while running:
         flor_group = pygame.sprite.Group()
         door_group = pygame.sprite.Group()
         portal_group = pygame.sprite.Group()
+        vis_group = pygame.sprite.Group()
         ghost_group = pygame.sprite.Group()
         ghost = []
         portal = []
@@ -539,6 +575,7 @@ while running:
     key_group.draw(screen)
     particle_group.update()
     gan_group.update()
+    player.update([0, 0])
     portal_group.draw(screen)
     player_group.draw(screen)
     if portal:
