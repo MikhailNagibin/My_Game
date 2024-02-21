@@ -335,8 +335,8 @@ class Player(pygame.sprite.Sprite):
             self.count //= 2
             create_particles(self.rect[:2])
             self.was = True
-            if self.los >= 6:
-                time.sleep(2)
+            if self.los >= 1:
+                print('Вы потеряли слишком много ключей')
                 start_end_screen("end")
                 sys.exit()
 
@@ -531,7 +531,7 @@ while running:
                 for i in range(len(key_global_pos)):
                     print(key_global_pos[i], key_local_pos[i])
             elif event.key == pygame.K_c:
-                print(player.count)
+                print(player.count, '/ 10')
         if event.type == is_ghost:
             ghost.append(1)
             my_ghost = Ghost()
