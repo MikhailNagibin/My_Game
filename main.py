@@ -306,7 +306,7 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             player_pos[0] * 50 + 7, player_pos[1] * 50
         )
-        self.count = 10
+        self.count = coins
 
     def update(self, delta, direction=None):
         if direction and direction != self.direction:
