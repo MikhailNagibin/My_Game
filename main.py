@@ -422,16 +422,13 @@ class Particle(pygame.sprite.Sprite):
         fire.append(pygame.transform.scale(fire[0], (scale, scale)))
 
     def __init__(self, pos, dx, dy):
-
         super().__init__(all_sprites, particle_group)
         self.image = random.choice(self.fire)
         self.rect = self.image.get_rect()
-
         # у каждой частицы своя скорость - это вектор
         self.velocity = [dx, dy]
         # и свои координаты
         self.rect.x, self.rect.y = pos
-
         # гравитация будет одинаковой
         self.gravity = 0.25
 
@@ -443,7 +440,7 @@ class Particle(pygame.sprite.Sprite):
         self.rect.x += self.velocity[0]
         self.rect.y += self.velocity[1]
         # убиваем, если частица ушла за экран
-        if not self.rect.colliderect(screen_rect):
+        if pygame.sprite.spritecollideany(self, wall_group):
             self.kill()
 
 
