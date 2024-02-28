@@ -171,7 +171,8 @@ tile_images = {
     "portal1": load_image("portal1.png"),
     "gan": load_image("gan.png"),
     "ghost": load_image("ghost.png"),
-    'vision': load_image('vision.png'),
+    "vision": load_image("vision.png"),
+    "lose": load_image("lose.jpg"),
 }
 
 
@@ -336,12 +337,21 @@ class Player(pygame.sprite.Sprite):
             create_particles(self.rect[:2])
             self.was = True
             if self.los >= 5:
-                print('Вы потеряли слишком много ключей')
+                print("Вы потеряли слишком много ключей")
                 start_end_screen("end")
                 sys.exit()
 
     def check(self):
-        for delta in [[50, 50], [50, -50], [-50, 50], [-50, -50], [50, 0], [-50, 0], [0, 50], [0, -50]]:
+        for delta in [
+            [50, 50],
+            [50, -50],
+            [-50, 50],
+            [-50, -50],
+            [50, 0],
+            [-50, 0],
+            [0, 50],
+            [0, -50],
+        ]:
             self.rect.x, self.rect.y = self.rect.x + delta[0], self.rect.y + delta[1]
             if (
                 pygame.sprite.spritecollideany(self, golden_door_group)
@@ -392,10 +402,15 @@ class Ghost(pygame.sprite.Sprite):
 class Vision(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, ghost_group)
-        self.image = pygame.transform.rotate(tile_images['vision'], 270)
+        self.image = pygame.transform.rotate(tile_images["vision"], 270)
         self.rect = self.image.get_rect().move(-50 * 3 + 25, -50 * 6 - 25)
         self.rot = -90
-        self.move = [[(50 * 3 + 25) * 2 - 50, -200 + (50 * 6 - 25) * 2 + 50], [-100, 100], [100, 100], [100, -100]]
+        self.move = [
+            [(50 * 3 + 25) * 2 - 50, -200 + (50 * 6 - 25) * 2 + 50],
+            [-100, 100],
+            [100, 100],
+            [100, -100],
+        ]
 
     def rotate(self):
         self.image = pygame.transform.rotate(self.image, 90)
@@ -440,7 +455,9 @@ class Particle(pygame.sprite.Sprite):
         self.rect.x += self.velocity[0]
         self.rect.y += self.velocity[1]
         # убиваем, если частица ушла за экран
-        if pygame.sprite.spritecollideany(self, wall_group) or pygame.sprite.spritecollideany(self, door_group):
+        if pygame.sprite.spritecollideany(
+            self, wall_group
+        ) or pygame.sprite.spritecollideany(self, door_group):
             self.kill()
 
 
@@ -528,7 +545,7 @@ while running:
                 for i in range(len(key_global_pos)):
                     print(key_global_pos[i], key_local_pos[i])
             elif event.key == pygame.K_c:
-                print(player.count, '/ 10')
+                print(player.count, "/ 10")
         if event.type == is_ghost:
             ghost.append(1)
             my_ghost = Ghost()
@@ -600,3 +617,5 @@ end_of_game = time.time()
 if end:
     print(round(end_of_game - start_of_game, 2))
     start_end_screen("end")
+else:
+    start_end_screen("lose")
