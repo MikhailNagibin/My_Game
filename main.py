@@ -4,6 +4,7 @@ import random
 import sys
 import time
 
+pygame.init()
 FPS = 50
 WIDTH, HEIGHT = 550, 550
 count = 0
@@ -57,7 +58,6 @@ pos_level = {
     "43": "стена3.txt",
     "44": "1111.txt",
 }
-pygame.mouse.set_visible(0)
 posible_global_pos_golden_door = [
     [0, 0],
     [0, 1],
@@ -166,7 +166,7 @@ tile_images = {
     "box0": load_image("box.jpg"),
     "key": load_image("new_key.png"),
     "golden_door": load_image("golden_door.jpg"),
-    "start": load_image("start.jpg"),
+    "start": load_image("start.png"),
     "end": load_image("end.jpg"),
     "portal1": load_image("portal1.png"),
     "gan": load_image("gan.png"),
@@ -176,7 +176,26 @@ tile_images = {
 }
 
 
-def start_end_screen(tile):
+def start():
+    fon = pygame.transform.scale(tile_images["start"], (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+    pygame.draw.rect(screen, (125, 125, 125), (200, 200, 200, 30))
+    font1 = pygame.font.Font(None, 50)
+    text = font1.render("Начать", True, (100, 255, 100))
+    screen.blit(text, (250, 200))
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if 200 <= event.pos[0] <= 400 and 200 <= event.pos[1] <= 230:
+                    return
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def end_screen(tile):
     fon = pygame.transform.scale(tile_images[tile], (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
     while True:
@@ -338,7 +357,7 @@ class Player(pygame.sprite.Sprite):
             self.was = True
             if self.los >= 5:
                 print("Вы потеряли слишком много ключей")
-                start_end_screen("end")
+                end_screen("end")
                 sys.exit()
 
     def check(self):
@@ -481,7 +500,8 @@ def teleport():
 
 
 my_map = Map()
-start_end_screen("start")
+start()
+pygame.mouse.set_visible(0)
 start_of_game = time.time()
 level_x, level_y = generate_level(
     load_level(pos_level[str(global_pos[0]) + str(global_pos[1])])
@@ -616,6 +636,6 @@ while running:
 end_of_game = time.time()
 if end:
     print(round(end_of_game - start_of_game, 2))
-    start_end_screen("end")
+    end_screen("end")
 else:
-    start_end_screen("lose")
+    end_screen("lose")
